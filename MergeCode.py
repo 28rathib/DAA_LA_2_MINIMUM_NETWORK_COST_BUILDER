@@ -49,7 +49,7 @@ def visualize_network(mst_edges, total_cost):
     labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_color='blue')
 
-    plt.title(f"⚡ Minimum Cost Power Substation Network\nTotal Cost = {total_cost}")
+    plt.title(f" Minimum Cost Power Substation Network\nTotal Cost = {total_cost}")
     plt.show()
 
 
@@ -75,3 +75,4 @@ if __name__ == "__main__":
     print("\nTotal Minimum Cost =", total_cost)
 
     visualize_network(mst_edges, total_cost)
+
