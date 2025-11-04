@@ -7,21 +7,33 @@ Original file is located at
     https://colab.research.google.com/drive/17eFnyNOguFsMs7ZhkxhUgomIxBZBJerZ
 """
 
-# Union-Find
 class UnionFind:
     def __init__(self, vertices):
+        # Each vertex is its own parent initially
         self.parent = {v: v for v in vertices}
+        # Each vertex starts with rank 0
+        self.rank = {v: 0 for v in vertices}
 
     def find(self, v):
         if self.parent[v] != v:
-            self.parent[v] = self.find(self.parent[v])  # directly map the vertex to its root
+            self.parent[v] = self.find(self.parent[v]) # directly connect vertex to its root
         return self.parent[v]
 
     def union(self, v1, v2):
+        # Find roots of the sets each vertex belongs to
         root1 = self.find(v1)
         root2 = self.find(v2)
+
         if root1 != root2:
-            self.parent[root2] = root1
+            # Union by rank: attach smaller tree under the bigger one
+            if self.rank[root1] < self.rank[root2]:
+                self.parent[root1] = root2
+            elif self.rank[root1] > self.rank[root2]:
+                self.parent[root2] = root1
+            else:
+                # If ranks are equal, make one the parent and increase its rank
+                self.parent[root2] = root1
+                self.rank[root1] += 1
 
 # Example usage:
 vertices = ['A', 'B', 'C', 'D']
@@ -32,4 +44,4 @@ uf.union('C', 'D')
 
 print(uf.find('A'), uf.find('B'))  # same root
 print(uf.find('C'), uf.find('D'))  # same root
-print(uf.find('A'), uf.find('C'))  # different sets
+print(uf.find('A'), uf.find('C'))  # different sets (since A-B and C-D are not connected)
