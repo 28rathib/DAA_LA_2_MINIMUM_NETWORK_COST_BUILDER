@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Minimum Cost Network Builder</title>
+  <!-- Include vis-network library -->
+  <script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+  <link href="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      margin: 0;
+      background: #f0f5f9;
+      color: #333;
+      text-align: center;
+    }
+    h1 {
+      color: #0077b6;
+      margin-top: 20px;
+    }
+    .container {
+      width: 90%;
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      margin: 8px;
+      padding: 10px;
+      border: 1px solid #0077b6;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      background: #0077b6;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #023e8a;
+    }
+    #network {
+      height: 400px;
+      border: 2px solid #0077b6;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
+    #output {
+      text-align: left;
+      margin-top: 20px;
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Minimum Cost Network Builder</h1>
+  <div class="container">
+    <p>Connect Power Substations with Minimum Cost (Kruskal's Algorithm)</p>
+
+    <div>
+      <input type="text" id="vertex" placeholder="Enter Substation Name (e.g. A)">
+      <button onclick="addVertex()">Add Substation</button>
+    </div>
+
+    <div>
+      <input type="text" id="from" placeholder="From (e.g. A)">
+      <input type="text" id="to" placeholder="To (e.g. B)">
+      <input type="number" id="cost" placeholder="Cost (e.g. 10)">
+      <button onclick="addEdge()">Add Connection</button>
+    </div>
+
+    <button onclick="buildMST()">Build Minimum Cost Network</button>
+
+    <div id="network"></div>
+
+    <div id="output"></div>
+  </div>
+
+  <script>
+    // ---- Data Storage ----
+    let vertices = [];
+    let edges = [];
+    let network = null;
+
+    // ---- Add Substation ----
+    function addVertex() {
+      const vertex = document.getElementById('vertex').value.trim().toUpperCase();
+      if (vertex && !vertices.includes(vertex)) {
+        vertices.push(vertex);
+        alert(`Substation ${vertex} added!`);
+      } else {
+        alert('Please enter a valid or new substation name.');
+      }
+      document.getElementById('vertex').value = '';
+    }
+
+    // ---- Add Connection ----
+    function addEdge() {
+      const from = document.getElementById('from').value.trim().toUpperCase();
+      const to = document.getElementById('to').value.trim().toUpperCase();
+      const cost = parseInt(document.getElementById('cost').value);
+
+      if (from && to && !isNaN(cost)) {
+        edges.push({ from, to, cost });
+        alert(`Connection added: ${from} - ${to} (Cost: ${cost})`);
+      } else {
+        alert('Please enter valid connection details.');
+      }
+
+      document.getElementById('from').value = '';
+      document.getElementById('to').value = '';
+      document.getElementById('cost').value = '';
+    }
+
+    // ---- Union-Find Structure ----
+    class UnionFind {
+      constructor(elements) {
+        this.parent = {};
+        elements.forEach(e => (this.parent[e] = e));
+      }
+      find(e) {
+        if (this.parent[e] === e) return e;
+        this.parent[e] = this.find(this.parent[e]);
+        return this.parent[e];
+      }
+      union(e1, e2) {
+        const root1 = this.find(e1);
+        const root2 = this.find(e2);
+        if (root1 !== root2) {
+          this.parent[root2] = root1;
+          return true;
+        }
+        return false;
+      }
+    }
+
+    // ---- Kruskal’s Algorithm ----
+    function kruskal(vertices, edges) {
+      const uf = new UnionFind(vertices);
+      const mst = [];
+      let totalCost = 0;
+
+      edges.sort((a, b) => a.cost - b.cost);
+
+      for (let edge of edges) {
+        if (uf.union(edge.from, edge.to)) {
+          mst.push(edge);
+          totalCost += edge.cost;
+        }
+      }
+      return { mst, totalCost };
+    }
+
+    // ---- Build MST and Display Graph ----
+    function buildMST() {
+      if (vertices.length === 0 || edges.length === 0) {
+        alert("Please add substations and connections first!");
+        return;
+      }
+
+      const { mst, totalCost } = kruskal(vertices, edges);
+
+      const nodes = vertices.map(v => ({ id: v, label: v }));
+      const edgeData = mst.map(e => ({
+        from: e.from,
+        to: e.to,
+        label: e.cost.toString(),
+        color: { color: "#0077b6" },
+        width: 3
+      }));
+
+      const container = document.getElementById("network");
+      const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edgeData) };
+      const options = {
+        nodes: { shape: "circle", color: "#90e0ef", font: { size: 18, color: "#023e8a" } },
+        edges: { font: { align: "middle" }, smooth: true },
+        physics: { enabled: true }
+      };
+
+      network = new vis.Network(container, data, options);
+
+      // Display result
+      let outputHTML = `<h3>✅ Minimum Cost Network</h3>`;
+      outputHTML += `<ul>`;
+      mst.forEach(e => {
+        outputHTML += `<li>${e.from} — ${e.to} (Cost: ${e.cost})</li>`;
+      });
+      outputHTML += `</ul><strong>Total Minimum Cost: ${totalCost}</strong>`;
+      document.getElementById("output").innerHTML = outputHTML;
+    }
+  </script>
+</body>
+</html>
